@@ -14,6 +14,7 @@ import panda_utils as util
 
 IMAGE_ANNO_MODE = ('person', 'vehicle', 'person&vehicle', 'headbbox', 'headpoint')
 
+linethick=1
 
 class PANDA_IMAGE:
     def __init__(self, basepath, annofile, annomode, extraannofile=None, showwidth=1280):
@@ -31,35 +32,36 @@ class PANDA_IMAGE:
         self.annofile = annofile
         self.extraannofile = extraannofile
         self.showwidth = showwidth
-        self.imagepath = os.path.join(basepath, 'image_test')
+        # self.imagepath = os.path.join(basepath, 'image_test')
+        self.imagepath = os.path.join(basepath, 'image_train')
         self.annopath = os.path.join(basepath, 'image_annos', annofile)
-        self.extraannopath = os.path.join(basepath, 'image_annos', extraannofile)
+        self.extraannopath = os.path.join(basepath, 'image_annos', str(extraannofile))
         self.imgpaths = util.GetFileFromThisRootDir(self.imagepath, ext='jpg')
         self.annos = defaultdict(list)
         self.extraannos = defaultdict(list)
         self.createIndex()
 
     def createIndex(self):
-        if self.annomode == 'person&vehicle':
-            annos = util.parse_panda_rect(self.annopath, 'person', self.showwidth)
-            extraannos = util.parse_panda_rect(self.extraannopath, 'vehicle', self.showwidth)
+        if self.annomode == 'person&vehicle': # 2 annos
+            annos = util.parse_panda_rect(self.annopath, 'person', self.showwidth) # annos:'person'
+            extraannos = util.parse_panda_rect(self.extraannopath, 'vehicle', self.showwidth) # extraannos:'vehicle'
             self.annos = annos
             self.extraannos = extraannos
-        else:
+        else: # 1 anno
             annos = util.parse_panda_rect(self.annopath, self.annomode, self.showwidth)
             self.annos = annos
 
     def showImgs(self, imgrequest=None, range=10, imgfilters=[], shuffle=True):
         """
-        :param imgrequest: list, images names you want to request, eg. ['1-HIT_canteen/IMG_1_4.jpg', ...]
-        :param range: number of image to show
-        :param imgfilters: essential keywords in image name
-        :param shuffle: shuffle all image
+        :param imgrequest: list, images names you want to request, eg. ['1-HIT_canteen/IMG_1_4.jpg', ...] # which image folder
+        :param range: number of image to show # what image number
+        :param imgfilters: essential keywords in image name # keywords
+        :param shuffle: shuffle all image # random ordering
         :return:
         """
         if imgrequest is None or not isinstance(imgrequest, list):
-            allnames = list(self.annos.keys())
-            imgnames = [] if imgfilters else allnames
+            allnames = list(self.annos.keys()) # 'self.annos' is a dict, 'dict.keys' return an iteration, 'list()' can transfer it to a list 
+            imgnames = [] if imgfilters else allnames # 'imgnames' is a list
             if imgfilters:
                 for imgname in allnames:
                     iskeep = False
@@ -67,7 +69,7 @@ class PANDA_IMAGE:
                         if imgfilter in imgname:
                             iskeep = True
                     if iskeep:
-                        imgnames.append(imgname)
+                        imgnames.append(imgname) # add to list
             if shuffle:
                 random.shuffle(imgnames)
             if range:
@@ -122,19 +124,19 @@ class PANDA_IMAGE:
             if img is None:
                 continue
             if self.annomode == 'person':
-                imgwithann = self._addPersonAnns(imgname, img)
+                imgwithann = self._addPersonAnns(imgname, img, linethick)
             elif self.annomode == 'vehicle':
-                imgwithann = self._addVehicleAnns(imgname, img)
+                imgwithann = self._addVehicleAnns(imgname, img, linethick)
             elif self.annomode == 'person&vehicle':
-                imgwithann = self._addPersonVehicleAnns(imgname, img)
+                imgwithann = self._addPersonVehicleAnns(imgname, img, linethick)
             elif self.annomode == 'headbbox':
-                imgwithann = self._addHeadbboxAnns(imgname, img)
+                imgwithann = self._addHeadbboxAnns(imgname, img, linethick)
             elif self.annomode == 'headpoint':
-                imgwithann = self._addHeadpointAnns(imgname, img)
+                imgwithann = self._addHeadpointAnns(imgname, img, linethick)
 
             if saveimg:
                 cv2.imwrite(os.path.join(savedir, util.custombasename(imgname) + '.jpg'), imgwithann)
-            cv2.putText(img, 'Press any button to continue', (0, 25), cv2.FONT_HERSHEY_SIMPLEX, 1, (0, 0, 255), 2)
+            # cv2.putText(img, 'Press any button to continue', (0, 25), cv2.FONT_HERSHEY_SIMPLEX, linethick, (0, 0, 255), 2*linethick)
             # cv2.imshow(util.custombasename(imgname), imgwithann)
             # cv2.waitKey(0)
 
@@ -160,21 +162,21 @@ class PANDA_IMAGE:
             cate = objdict['cate']
             if objdict['ignore']:
                 xmin, ymin, xmax, ymax = objdict['rect']
-                cv2.rectangle(img, (xmin, ymin), (xmax, ymax), (0, 0, 255), 1)
-                cv2.line(img, (xmin, ymin), (xmax, ymax), (0, 0, 255), 1)
-                cv2.line(img, (xmin, ymax), (xmax, ymin), (0, 0, 255), 1)
+                cv2.rectangle(img, (xmin, ymin), (xmax, ymax), (0, 0, 255), linethick)
+                cv2.line(img, (xmin, ymin), (xmax, ymax), (0, 0, 255), linethick)
+                cv2.line(img, (xmin, ymax), (xmax, ymin), (0, 0, 255), linethick)
                 if showcate:
-                    cv2.putText(img, cate, (xmin, ymin), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 1)
+                    cv2.putText(img, cate, (xmin, ymin), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), linethick)
             else:
                 b = random.randint(0, 255)
                 g = random.randint(0, 255)
                 r = random.randint(0, 255)
                 for rect in [objdict['fullrect'], objdict['visiblerect'], objdict['headrect']]:
                     xmin, ymin, xmax, ymax = rect
-                    cv2.rectangle(img, (xmin, ymin), (xmax, ymax), (b, g, r), 1)
+                    cv2.rectangle(img, (xmin, ymin), (xmax, ymax), (b, g, r), linethick)
                 xmin, ymin, _, _ = objdict['fullrect']
                 if showcate:
-                    cv2.putText(img, cate, (xmin, ymin), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (b, g, r), 1)
+                    cv2.putText(img, cate, (xmin, ymin), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (b, g, r), linethick)
         return img
 
     def _addVehicleAnns(self, imgname, img, showcate=False):
@@ -186,13 +188,13 @@ class PANDA_IMAGE:
             g = random.randint(0, 255)
             r = random.randint(0, 255)
             if objdict['ignore']:
-                cv2.rectangle(img, (xmin, ymin), (xmax, ymax), (0, 0, 255), 1)
-                cv2.line(img, (xmin, ymin), (xmax, ymax), (0, 0, 255), 1)
-                cv2.line(img, (xmin, ymax), (xmax, ymin), (0, 0, 255), 1)
+                cv2.rectangle(img, (xmin, ymin), (xmax, ymax), (0, 0, 255), linethick)
+                cv2.line(img, (xmin, ymin), (xmax, ymax), (0, 0, 255), linethick)
+                cv2.line(img, (xmin, ymax), (xmax, ymin), (0, 0, 255), linethick)
             else:
-                cv2.rectangle(img, (xmin, ymin), (xmax, ymax), (b, g, r), 1)
+                cv2.rectangle(img, (xmin, ymin), (xmax, ymax), (b, g, r), linethick)
                 if showcate:
-                    cv2.putText(img, cate, (xmin, ymin), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (b, g, r), 1)
+                    cv2.putText(img, cate, (xmin, ymin), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (b, g, r), linethick)
         return img
 
     def _addPersonVehicleAnns(self, imgname, img, showcate=False):
@@ -202,21 +204,21 @@ class PANDA_IMAGE:
             cate = objdict['cate']
             if objdict['ignore']:
                 xmin, ymin, xmax, ymax = objdict['rect']
-                cv2.rectangle(img, (xmin, ymin), (xmax, ymax), (0, 0, 255), 1)
-                cv2.line(img, (xmin, ymin), (xmax, ymax), (0, 0, 255), 1)
-                cv2.line(img, (xmin, ymax), (xmax, ymin), (0, 0, 255), 1)
+                cv2.rectangle(img, (xmin, ymin), (xmax, ymax), (0, 0, 255), linethick)
+                cv2.line(img, (xmin, ymin), (xmax, ymax), (0, 0, 255), linethick)
+                cv2.line(img, (xmin, ymax), (xmax, ymin), (0, 0, 255), linethick)
                 if showcate:
-                    cv2.putText(img, cate, (xmin, ymin), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), 1)
+                    cv2.putText(img, cate, (xmin, ymin), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (0, 0, 255), linethick)
             else:
                 b = random.randint(0, 255)
                 g = random.randint(0, 255)
                 r = random.randint(0, 255)
                 for rect in [objdict['fullrect'], objdict['visiblerect'], objdict['headrect']]:
                     xmin, ymin, xmax, ymax = rect
-                    cv2.rectangle(img, (xmin, ymin), (xmax, ymax), (b, g, r), 1)
+                    cv2.rectangle(img, (xmin, ymin), (xmax, ymax), (b, g, r), linethick)
                 xmin, ymin, _, _ = objdict['fullrect']
                 if showcate:
-                    cv2.putText(img, cate, (xmin, ymin), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (b, g, r), 1)
+                    cv2.putText(img, cate, (xmin, ymin), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (b, g, r), linethick)
         for objdict in vehicleobjlist:
             cate = objdict['cate']
             xmin, ymin, xmax, ymax = objdict['rect']
@@ -224,20 +226,20 @@ class PANDA_IMAGE:
             g = random.randint(0, 255)
             r = random.randint(0, 255)
             if objdict['ignore']:
-                cv2.rectangle(img, (xmin, ymin), (xmax, ymax), (0, 0, 255), 1)
-                cv2.line(img, (xmin, ymin), (xmax, ymax), (0, 0, 255), 1)
-                cv2.line(img, (xmin, ymax), (xmax, ymin), (0, 0, 255), 1)
+                cv2.rectangle(img, (xmin, ymin), (xmax, ymax), (0, 0, 255), linethick)
+                cv2.line(img, (xmin, ymin), (xmax, ymax), (0, 0, 255), linethick)
+                cv2.line(img, (xmin, ymax), (xmax, ymin), (0, 0, 255), linethick)
             else:
-                cv2.rectangle(img, (xmin, ymin), (xmax, ymax), (b, g, r), 1)
+                cv2.rectangle(img, (xmin, ymin), (xmax, ymax), (b, g, r), linethick)
                 if showcate:
-                    cv2.putText(img, cate, (xmin, ymin), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (b, g, r), 1)
+                    cv2.putText(img, cate, (xmin, ymin), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (b, g, r), linethick)
         return img
 
     def _addHeadbboxAnns(self, imgname, img):
         objlist = self.annos[imgname]
         for rect in objlist:
             xmin, ymin, xmax, ymax = rect
-            cv2.rectangle(img, (xmin, ymin), (xmax, ymax), (0, 0, 255), 1)
+            cv2.rectangle(img, (xmin, ymin), (xmax, ymax), (0, 0, 255), linethick)
         return img
 
     def _addHeadpointAnns(self, imgname, img):

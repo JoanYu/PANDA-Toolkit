@@ -50,7 +50,8 @@ class ImgSplit():
         self.slidewidth = self.subwidth - self.gap
         self.slideheight = self.subheight - self.gap
         self.thresh = thresh
-        self.imagepath = os.path.join(self.basepath, 'PANDA_IMAGE')
+        # self.imagepath = os.path.join(self.basepath, 'PANDA_IMAGE')
+        self.imagepath = os.path.join(self.basepath, 'image_train')
         self.annopath = os.path.join(self.basepath, 'annoJSONs', annofile)
         self.outimagepath = os.path.join(self.outpath, 'PANDA_IMAGE')
         self.outannopath = os.path.join(self.outpath, 'annoJSONs')
